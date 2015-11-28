@@ -16,6 +16,8 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import com.facebook.AccessToken;
@@ -32,10 +34,15 @@ import com.facebook.appevents.AppEventsLogger;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -43,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
     CallbackManager callbackManager;
     LoginButton loginButton;
     private PrefUtil prefUtil;
+    ArrayAdapter<String> arrayAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +66,11 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         prefUtil = new PrefUtil(this);
+
+        ListView listView = (ListView) findViewById(R.id.friend_list);
+        arrayAdapter = new ArrayAdapter<String>(this,
+                R.layout.list_item_friend, R.id.list_item_friend_textview, new ArrayList<String>());
+        listView.setAdapter(arrayAdapter);
 
         loginButton = (LoginButton) findViewById(R.id.login_button);
         loginButton.setReadPermissions("user_friends");
@@ -80,24 +93,21 @@ public class MainActivity extends AppCompatActivity {
                         new GraphRequest.Callback() {
                             public void onCompleted(GraphResponse response) {
                                 /* handle the result */
-                                JSONObject obj = response.getJSONObject();
-                                Log.v(LOG_TAG, obj.toString());
+                                Log.v(LOG_TAG, response.getJSONObject().toString());
+                                try {
+                                    JSONArray friends = response.getJSONObject().getJSONArray("data");
+                                    for (int i = 0; i < friends.length(); i++) {
+                                        JSONObject friend = friends.getJSONObject(i);
+                                        String name = friend.getString("name");
+                                        Log.v(LOG_TAG, name);
+                                        arrayAdapter.add(name);
+                                    }
+                                } catch (JSONException e) {
+                                    Log.e(LOG_TAG, e.getMessage());
+                                }
                             }
                         }
                 ).executeAsync();
-
-                /* make the API call
-                new GraphRequest(
-                        AccessToken.getCurrentAccessToken(),
-                        "/me",
-                        null,
-                        HttpMethod.GET,
-                        new GraphRequest.Callback() {
-                            public void onCompleted(GraphResponse response) {
-                            }
-                        }
-                ).executeAsync();*/
-                // App code
             }
 
             @Override
