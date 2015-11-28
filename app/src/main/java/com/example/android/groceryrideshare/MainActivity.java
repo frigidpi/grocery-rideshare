@@ -1,11 +1,15 @@
 package com.example.android.groceryrideshare;
 
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.Signature;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,6 +31,11 @@ import com.facebook.Profile;
 import com.facebook.appevents.AppEventsLogger;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
+
+import org.json.JSONObject;
+
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -51,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
         prefUtil = new PrefUtil(this);
 
         loginButton = (LoginButton) findViewById(R.id.login_button);
-        // loginButton.setReadPermissions("user_friends");
+        loginButton.setReadPermissions("user_friends");
         // If using in a fragment
         // loginButton.setFragment(this);
         // Other app specific specialization
@@ -61,6 +70,21 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSuccess(LoginResult loginResult) {
                 prefUtil.saveAccessToken(loginResult.getAccessToken().getToken());
+
+                 /* make the API call */
+                new GraphRequest(
+                        AccessToken.getCurrentAccessToken(),
+                        "/me/friends",
+                        null,
+                        HttpMethod.GET,
+                        new GraphRequest.Callback() {
+                            public void onCompleted(GraphResponse response) {
+                                /* handle the result */
+                                JSONObject obj = response.getJSONObject();
+                                Log.v(LOG_TAG, obj.toString());
+                            }
+                        }
+                ).executeAsync();
 
                 /* make the API call
                 new GraphRequest(
